@@ -1,25 +1,23 @@
-import pymongo.mongo_client
 from networksecurity.exception.exception import NetworkSecurityException
 from networksecurity.logging.logger import logging
 
-##configuration of the DAta ingestion config:
+
+## configuration of the Data Ingestion Config
 
 from networksecurity.entity.config_entity import DataIngestionConfig
 from networksecurity.entity.artifact_entity import DataIngestionArtifact
-
-
 import os
 import sys
-import numpy as np 
+import numpy as np
 import pandas as pd
 import pymongo
 from typing import List
 from sklearn.model_selection import train_test_split
-
-from dotenv import load_dotenv 
-load_dotenv
+from dotenv import load_dotenv
+load_dotenv()
 
 MONGO_DB_URL=os.getenv("MONGO_DB_URL")
+
 
 class DataIngestion:
     def __init__(self,data_ingestion_config:DataIngestionConfig):
@@ -29,21 +27,21 @@ class DataIngestion:
             raise NetworkSecurityException(e,sys)
         
     def export_collection_as_dataframe(self):
-        """read data form mongodb"""
+        """
+        Read data from mongodb
+        """
         try:
             database_name=self.data_ingestion_config.database_name
             collection_name=self.data_ingestion_config.collection_name
             self.mongo_client=pymongo.MongoClient(MONGO_DB_URL)
             collection=self.mongo_client[database_name][collection_name]
 
-            df= pd.DataFrame(list(collection.find()))
-            
+            df=pd.DataFrame(list(collection.find()))
             if "_id" in df.columns.to_list():
-                df = df.drop(columns=["_id"], axis=1)
+                df=df.drop(columns=["_id"],axis=1)
             
-            df.replace({"na":np.nana}, inplace=True)
+            df.replace({"na":np.nan},inplace=True)
             return df
-
         except Exception as e:
             raise NetworkSecurityException
         
@@ -59,7 +57,6 @@ class DataIngestion:
         except Exception as e:
             raise NetworkSecurityException(e,sys)
         
-
     def split_data_as_train_test(self,dataframe: pd.DataFrame):
         try:
             train_set, test_set = train_test_split(
@@ -89,7 +86,7 @@ class DataIngestion:
             
         except Exception as e:
             raise NetworkSecurityException(e,sys)
-    
+        
         
     def initiate_data_ingestion(self):
         try:
@@ -97,12 +94,8 @@ class DataIngestion:
             dataframe=self.export_data_into_feature_store(dataframe)
             self.split_data_as_train_test(dataframe)
             dataingestionartifact=DataIngestionArtifact(trained_file_path=self.data_ingestion_config.training_file_path,
-                                                        test_file_path=self.data_ingestion_config)
+                                                        test_file_path=self.data_ingestion_config.testing_file_path)
             return dataingestionartifact
-
-
 
         except Exception as e:
             raise NetworkSecurityException
-        
-        
